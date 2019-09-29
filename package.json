@@ -1,4 +1,30 @@
 {
   "name": "@naxustw/md2an",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PDIS/md2an.git"
+  },
+  "author": "PDIS",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PDIS/md2an/issues"
+  },
+  "homepage": "https://github.com/PDIS/md2an#readme",
+  "bin": {
+    "md2an": "./index.js"
+  },
+  "dependencies": {
+    "he": "^1.2.0",
+    "jsontoxml": "^1.0.1",
+    "lodash": "^4.17.15",
+    "marked": "^0.7.0",
+    "viz.js": "^2.1.2",
+    "xml-formatter": "^1.1.0"
+  }
 }
