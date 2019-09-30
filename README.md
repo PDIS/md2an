@@ -3,7 +3,7 @@
 ## To install
 
 ```
-npm i @naxustw/md2an -g
+npm install -g md2an
 ```
 
 ## Usage
