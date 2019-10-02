@@ -59,12 +59,15 @@ const md2an = (input, graphviz) => {
       lines.map( line => {
         if (/(?=.*>)(?=.*\[)(?=.*（).*/.exec(line)) {
           let type = line.match(/\[(.*?)\]/)[1]
+          let hyperlink = line.match(/\((.*?)\)/)[1]
+          let first = line.match(/> (.*?)\[/)[1]
+          let last = line.match(/\)(.*?)）/)[0].replace(')','')
           let narrative = {
             'name': 'narrative',
             children: [
               {
                 'p': {
-                  'i': '（請點選 <a href="' + line.match(/\((.*?)\)/)[1] + '">' + type + '</a> 參考）'
+                  'i': `${first}<a href="${hyperlink}">${type}</a>${last}`
                 }
               }
             ]
@@ -106,6 +109,11 @@ const md2an = (input, graphviz) => {
             }
           ]
         }
+        if (/<a href="/.test(speech.children[0].p)) {
+          let linkbefore = speech.children[0].p.match(/<a href(.*?)>/)[0]
+          let linkafter = linkbefore.replace('&', '&#x26;')
+          speech.children[0].p = speech.children[0].p.replace(linkbefore, linkafter)
+        }
         debateSection.push(JSON.parse(JSON.stringify(speech)))
       })
       speakers.push(speaker)
@@ -142,7 +150,7 @@ const md2an = (input, graphviz) => {
     }
   }, {'xmlHeader': true, 'escape': true})
   let output = format(xml)
-  output = output.replace(/&lt;/g, '<').replace(/&quot;/g,'"').replace(/&gt;/g,'>')
+  output = output.replace(/&lt;/g, '<').replace(/&quot;/g,'"').replace(/&gt;/g,'>').replace(/&amp;/g,'&')
   return output
 }
 

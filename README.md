@@ -9,5 +9,5 @@ npm install -g md2an
 ## Usage
 
 ```
-md2an yourmdfile.md
+md2an yourmdfile
 ```
