@@ -21,6 +21,9 @@ const ConvertViz = async input => {
     result.split('\n').map( line => {
       if (count > 5)
       {
+        if (/width/.test(line)) { 
+          line = line.replace(line.match(/width\=(.*?) /)[1], '"100%"')
+        }
         graphviz += line
       }
       count++
@@ -154,17 +157,22 @@ const md2an = (input, graphviz) => {
   return output
 }
 
-const GetFilename  = (input) => {
-  return (input.match(/^#* (.*)/) || [])[1].replace(/\s/g, '-').replace(/Office-Hour_.*/, 'Office-Hour') + '.an.xml'
-}
+// const GetFilename  = (input) => {
+//   return (input.match(/^#* (.*)/) || [])[1].replace(/\s/g, '-').replace(/Office-Hour_.*/, 'Office-Hour') + '.an.xml'
+// }
 
-fs.readFile(args[0], async function (err, data) {
-  if (err) throw err;
+// fs.readFile(args[0], async function (err, data) {
+//   if (err) throw err;
+//   let graphviz = await ConvertViz(data.toString())
+//   fs.writeFile(GetFilename(data.toString()), md2an(data.toString(), graphviz), function(error) {
+//     if (err)
+//       console.log(err);
+//     else
+//       console.log('Write operation complete.');
+//   })
+// });
+
+process.stdin.setEncoding('utf8').on('data', async function(data) {
   let graphviz = await ConvertViz(data.toString())
-  fs.writeFile(GetFilename(data.toString()), md2an(data.toString(), graphviz), function(error) {
-    if (err)
-      console.log(err);
-    else
-      console.log('Write operation complete.');
-  })
-});
+  process.stdout.write(md2an(data.toString(), graphviz))
+})
