@@ -45,9 +45,7 @@ const md2an = (input, graphviz) => {
       'name': 'narrative',
       children: [
         {
-          'p': {
-            'i': graphviz
-          }
+          'p': graphviz
         }
       ]
     }
