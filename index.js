@@ -136,13 +136,13 @@ const md2an = (input, graphviz) => {
           },
           children: [
             {
-              'p': he.decode(marked(p.replace(/^[\r\n]+/, ''), { smartypants: true })).replace(/^\s*<p>\s*|\s*<\/p>\s*$/g, '').replace('&', '&#x26;'),
+              'p': he.decode(marked(p.replace(/^[\r\n]+/, ''), { smartypants: true })).replace(/^\s*<p>\s*|\s*<\/p>\s*$/g, '').replace(/&/g, '&#x26;'),
             }
           ]
         }
         if (/<a href="/.test(speech.children[0].p)) {
           let linkbefore = speech.children[0].p.match(/<a href(.*?)>/)[0]
-          let linkafter = linkbefore.replace('&', '&#x26;')
+          let linkafter = linkbefore
           speech.children[0].p = speech.children[0].p.replace(linkbefore, linkafter)
         }
         debateSection.push(JSON.parse(JSON.stringify(speech)))
