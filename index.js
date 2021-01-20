@@ -1,27 +1,27 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const _ = require('lodash');
-const jsonxml = require('jsontoxml');
-const format = require('xml-formatter');
-const marked = require('marked');
-const he = require('he');
-const Viz = require('viz.js');
-const { Module, render } = require('viz.js/full.render.js');
+const fs = require('fs')
+const _ = require('lodash')
+const jsonxml = require('jsontoxml')
+const format = require('xml-formatter')
+const marked = require('marked')
+const he = require('he')
+const Viz = require('viz.js')
+const { Module, render } = require('viz.js/full.render.js')
 
-let viz = new Viz({ Module, render });
+let viz = new Viz({ Module, render })
 let [, , ...args] = process.argv
 
-const ConvertViz = async input => {
+//mindmap
+const ConvertViz = async (input) => {
   if (/```graphviz/.exec(input)) {
-    let vizString = input.replace('graphviz','').split('```')[1]
+    let vizString = input.replace('graphviz', '').split('```')[1]
     let result = await viz.renderString(vizString)
     let count = 0
     let graphviz = ''
-    result.split('\n').map( line => {
-      if (count > 5)
-      {
-        if (/width/.test(line)) { 
+    result.split('\n').map((line) => {
+      if (count > 5) {
+        if (/width/.test(line)) {
           line = line.replace(line.match(/width\=(.*?) /)[1], '"100%"')
         }
         graphviz += line
@@ -34,38 +34,42 @@ const ConvertViz = async input => {
   }
 }
 
+//markdown to akomaNtoso
 const md2an = (input, graphviz) => {
   let references = []
   let debateSection = []
   let speakers = []
   let sections = input.replace(/\n:::info\n[\d\D]*?\n:::\n/, '').split('###')
-  debateSection.push({'heading':(input.match(/^#* (.*)/) || [])[1]})
-  if ( graphviz != '') {
+  debateSection.push({ heading: (input.match(/^#* (.*)/) || [])[1] })
+  if (graphviz != '') {
     let narrative = {
-      'name': 'narrative',
+      name: 'narrative',
       children: [
         {
-          'p': graphviz
+          p: graphviz
         }
       ]
     }
     debateSection.push(narrative)
   }
-  sections.map( section => {
+  sections.map((section) => {
     // first section = ''
-    if (! /\S/.test(section)) { return }
+    if (!/\S/.test(section)) {
+      return
+    }
     // info section
     if (/🌐|📅|🏡/.exec(section)) {
       let lines = section.split(/\n+/)
-      lines.map( line => {
+      lines.map((line) => {
+        //iframe
         if (/(?=.*>)(?=.*iframe).*/.exec(line)) {
           let hyperlink = line.match(/\<iframe(.*?)<\/iframe>/)[0]
           let narrative = {
-            'name': 'narrative',
+            name: 'narrative',
             children: [
               {
-                'p': {
-                  'i': `${hyperlink}`
+                p: {
+                  i: `${hyperlink}`
                 }
               }
             ]
@@ -73,14 +77,15 @@ const md2an = (input, graphviz) => {
           debateSection.push(narrative)
           return
         }
+        //image
         if (/(?=.*>)(?=.*img).*/.exec(line)) {
           let hyperlink = line.match(/\<img(.*?)\/>/)[0]
           let narrative = {
-            'name': 'narrative',
+            name: 'narrative',
             children: [
               {
-                'p': {
-                  'i': `${hyperlink}`
+                p: {
+                  i: `${hyperlink}`
                 }
               }
             ]
@@ -88,17 +93,26 @@ const md2an = (input, graphviz) => {
           debateSection.push(narrative)
           return
         }
+        //handle multiple hyperlinks
         if (/(?=.*>)(?=.*\[)(?=.*（).*/.exec(line)) {
-          let type = line.match(/\[(.*?)\]/)[1]
-          let hyperlink = line.match(/\((.*?)\)/)[1]
-          let first = line.match(/> (.*?)\[/)[1]
-          let last = line.match(/\)(.*?)）/)[0].replace(')','')
+          let text = line.match(/(?<=\[)(.*?)(?=\])/g)
+          let hyperlink = line.match(/(?<=\()(.*?)(?=\))/g)
+          let front = line.match(/((?<=> )(.*?)(?=\[))|((?<=\))(.*?)(?=\[))/g)
+          let behind = line.match(/((?<=\))(.*?)(?=\（\[))|((?<=\))(.*?)）$)/gm)
+          let temp = ''
+          for (let i = 0; i < text.length; i++) {
+            if (i == text.length - 1) {
+              temp += `${front[i]}<a href="${hyperlink[i]}">${text[i]}</a>${behind[i]}`
+            } else {
+              temp += `${front[i]}<a href="${hyperlink[i]}">${text[i]}</a>`
+            }
+          }
           let narrative = {
-            'name': 'narrative',
+            name: 'narrative',
             children: [
               {
-                'p': {
-                  'i': `${first}<a href="${hyperlink}">${type}</a>${last}`
+                p: {
+                  i: temp.replace(/&/g, '&#x26;')
                 }
               }
             ]
@@ -113,15 +127,17 @@ const md2an = (input, graphviz) => {
     // speaker sections
     if (speaker) {
       let context = section.replace(/ (.*?)[:：]/, '')
-      context.split(/[\r\n]{2,}/).map( p => {
-        if (!/\S/.test(p)) { return }
+      context.split(/[\r\n]{2,}/).map((p) => {
+        if (!/\S/.test(p)) {
+          return
+        }
         if (/^>/.exec(p)) {
           let narrative = {
-            'name': 'narrative',
+            name: 'narrative',
             children: [
               {
-                'p': {
-                  'i': p.replace(/>/,'').replace(/\s+/,'')
+                p: {
+                  i: p.replace(/>/, '').replace(/\s+/, '')
                 }
               }
             ]
@@ -130,20 +146,28 @@ const md2an = (input, graphviz) => {
           return
         }
         let speech = {
-          'name': 'speech',
-          'attrs': { 
-            'by': '#' + speaker 
+          name: 'speech',
+          attrs: {
+            by: '#' + speaker
           },
           children: [
             {
-              'p': he.decode(marked(p.replace(/^[\r\n]+/, ''), { smartypants: true })).replace(/^\s*<p>\s*|\s*<\/p>\s*$/g, '').replace(/&/g, '&#x26;'),
+              p: he
+                .decode(
+                  marked(p.replace(/^[\r\n]+/, ''), { smartypants: true })
+                )
+                .replace(/^\s*<p>\s*|\s*<\/p>\s*$/g, '')
+                .replace(/&/g, '&#x26;')
             }
           ]
         }
         if (/<a href="/.test(speech.children[0].p)) {
           let linkbefore = speech.children[0].p.match(/<a href(.*?)>/)[0]
           let linkafter = linkbefore
-          speech.children[0].p = speech.children[0].p.replace(linkbefore, linkafter)
+          speech.children[0].p = speech.children[0].p.replace(
+            linkbefore,
+            linkafter
+          )
         }
         debateSection.push(JSON.parse(JSON.stringify(speech)))
       })
@@ -151,37 +175,46 @@ const md2an = (input, graphviz) => {
     }
   })
   speakers = _.uniq(speakers)
-  speakers.map( speaker => {
+  speakers.map((speaker) => {
     let TLCPerson = {
-      'name': 'TLCPerson',
-      'attrs': { 
-        href: "/ontology/person/::/" + speaker,
+      name: 'TLCPerson',
+      attrs: {
+        href: '/ontology/person/::/' + speaker,
         id: speaker,
-        showAs: speaker,
-      },
+        showAs: speaker
+      }
     }
     references.push(TLCPerson)
   })
   if (/Office Hour_/.test(debateSection[0].heading)) {
     let heading = debateSection[0].heading.replace(/_[^_]*$/, '')
-    debateSection[0].heading = debateSection[0].heading.replace(/.*Office Hour_/, '')
-    debateSection = [{'heading': heading}, {'debateSection': debateSection}]
+    debateSection[0].heading = debateSection[0].heading.replace(
+      /.*Office Hour_/,
+      ''
+    )
+    debateSection = [{ heading: heading }, { debateSection: debateSection }]
   }
-  let xml = jsonxml({
-    'akomaNtoso':{
-      'debate': {
-        'meta': { 
-          references 
-        },
-        'debateBody': 
-        { 
-          'debateSection': debateSection
+  let xml = jsonxml(
+    {
+      akomaNtoso: {
+        debate: {
+          meta: {
+            references
+          },
+          debateBody: {
+            debateSection: debateSection
+          }
         }
       }
-    }
-  }, {'xmlHeader': true, 'escape': true})
+    },
+    { xmlHeader: true, escape: true }
+  )
   let output = format(xml)
-  output = output.replace(/&lt;/g, '<').replace(/&quot;/g,'"').replace(/&gt;/g,'>').replace(/&amp;/g,'&')
+  output = output
+    .replace(/&lt;/g, '<')
+    .replace(/&quot;/g, '"')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
   return output
 }
 
@@ -200,7 +233,7 @@ const md2an = (input, graphviz) => {
 //   })
 // });
 
-process.stdin.setEncoding('utf8').on('data', async function(data) {
+process.stdin.setEncoding('utf8').on('data', async function (data) {
   let graphviz = await ConvertViz(data.toString())
   process.stdout.write(md2an(data.toString(), graphviz))
 })
