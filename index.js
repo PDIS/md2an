@@ -125,7 +125,7 @@ const md2an = (input, graphviz) => {
             children: [
               {
                 p: {
-                  i: p.replace(/>/, '').replace(/\s+/, '')
+                  i: HandleTags(p.replace('> ', ''))
                 }
               }
             ]
