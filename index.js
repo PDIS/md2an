@@ -95,24 +95,12 @@ const md2an = (input, graphviz) => {
         }
         //handle multiple hyperlinks
         if (/(?=.*>)(?=.*\[)(?=.*（).*/.exec(line)) {
-          let text = line.match(/(?<=\[)(.*?)(?=\])/g)
-          let hyperlink = line.match(/(?<=\()(.*?)(?=\))/g)
-          let front = line.match(/((?<=> )(.*?)(?=\[))|((?<=\))(.*?)(?=\[))/g)
-          let behind = line.match(/((?<=\))(.*?)(?=\（\[))|((?<=\))(.*?)）$)/gm)
-          let temp = ''
-          for (let i = 0; i < text.length; i++) {
-            if (i == text.length - 1) {
-              temp += `${front[i]}<a href="${hyperlink[i]}">${text[i]}</a>${behind[i]}`
-            } else {
-              temp += `${front[i]}<a href="${hyperlink[i]}">${text[i]}</a>`
-            }
-          }
           let narrative = {
             name: 'narrative',
             children: [
               {
                 p: {
-                  i: temp.replace(/&/g, '&#x26;')
+                  i: HandleTags(line.replace('> ', ''))
                 }
               }
             ]
@@ -152,12 +140,7 @@ const md2an = (input, graphviz) => {
           },
           children: [
             {
-              p: he
-                .decode(
-                  marked(p.replace(/^[\r\n]+/, ''), { smartypants: true })
-                )
-                .replace(/^\s*<p>\s*|\s*<\/p>\s*$/g, '')
-                .replace(/&/g, '&#x26;')
+              p: HandleTags(p)
             }
           ]
         }
@@ -237,3 +220,14 @@ process.stdin.setEncoding('utf8').on('data', async function (data) {
   let graphviz = await ConvertViz(data.toString())
   process.stdout.write(md2an(data.toString(), graphviz))
 })
+
+const HandleTags = (p) => {
+  return he
+    .decode(marked(p.replace(/^[\r\n]+/, ''), { smartypants: true }))
+    .replace(/^\s*<p>\s*|\s*<\/p>\s*$/g, '')
+    .replace(/<strong>/g, '<b>')
+    .replace(/<\/strong>/g, '</b>')
+    .replace(/<em>/g, '<i>')
+    .replace(/<\/em>/g, '</i>')
+    .replace(/&/g, '&#x26;')
+}
